@@ -1,0 +1,1 @@
+msbuild Project.sln /p:Configuration=Release
