@@ -33,6 +33,7 @@ namespace Initial2D {
 		{
 			CloseHandle(pi.hProcess);
 			CloseHandle(pi.hThread);
+			fputs(catchError().c_str(), stderr);
 			return false;
 		}
 
