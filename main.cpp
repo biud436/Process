@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 		return -1;		
 	}
 	
-	//	Creates the package.json if there is no that file
+	// Creates the package.json if there is no that file
 	const char* package_file = ".\\package.json";
 	if (!std::ifstream(package_file)) 
 	{
