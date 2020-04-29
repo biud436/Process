@@ -110,7 +110,7 @@ int main(int argc, char** argv)
 
 	// Runs with the process.
 	wstr += L" . test";
-    Initial2D::Process nwjs(wstr);
-	
+	Initial2D::Process nwjs(wstr);
+
 	return 0;
 }
