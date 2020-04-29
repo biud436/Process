@@ -15,6 +15,8 @@
 	#define CHDIR chdir
 #endif
 
+static void sendKey(WORD key, bool up);
+
 unsigned char szPackageFile[177] =
 {
 	'\x7B', '\x0A', '\x09', '\x22', '\x6E', '\x61', '\x6D', '\x65', 
@@ -41,6 +43,21 @@ unsigned char szPackageFile[177] =
 	'\x70', '\x6E', '\x67', '\x22', '\x0A', '\x09', '\x7D', '\x0A', 
 	'\x7D'
 };
+
+void sendKey(WORD key, bool up)
+{
+	INPUT input = {0,};
+	input.type = INPUT_KEYBOARD;
+	input.ki.wVk = key;
+	input.ki.dwFlags = 0;
+
+	if(up) 
+	{
+		input.ki.dwFlags |= KEYEVENTF_KEYUP;
+	}
+
+	SendInput(1, &input, sizeof(input));
+}
 
 /**
  * @brief 
@@ -108,8 +125,30 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	// Runs with the process.
 	wstr += L" . test";
+
+	SetConsoleTitle(L"PLAY-CONSOLE");
+	Sleep(40);
+	HWND cmd_hwnd = FindWindowW(NULL, L"PLAY-CONSOLE");
+
+	// Auto Save it.
+	int ret = MessageBoxW(cmd_hwnd, L"Do you want to save it?", L"PLAY-CONSOLE", MB_OK|MB_YESNO|MB_ICONINFORMATION);
+	if(ret == IDYES) 
+	{
+		HWND mv_hwnd = FindWindowW(L"Qt5QWindowOwnDCIcon", NULL);
+		if(mv_hwnd != NULL) 
+		{
+			SetForegroundWindow(mv_hwnd);
+			Sleep(100);
+
+			sendKey(VK_CONTROL, false);
+			sendKey(0x53, false);
+			sendKey(0x53, true);
+			sendKey(VK_CONTROL, true);
+		}
+	}
+
+	// Runs with the process.
 	Initial2D::Process nwjs(wstr);
 
 	return 0;
