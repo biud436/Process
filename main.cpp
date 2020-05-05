@@ -59,6 +59,58 @@ void sendKey(WORD key, bool up)
 	SendInput(1, &input, sizeof(input));
 }
 
+std::wstring ReadRegString(HKEY hKey, std::wstring sKey, std::wstring sValue, 
+	std::wstring sDefault) {
+	HKEY key;
+	DWORD dwDisp;
+
+	wchar_t wcszValue[1024];
+	DWORD cbSize = sizeof(wcszValue);
+
+	// Create key
+	if (RegCreateKeyExW(hKey, sKey.data(), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, 
+		NULL, &key, &dwDisp) != ERROR_SUCCESS) {
+		return sDefault;
+	}
+
+	if( RegQueryValueExW(key, sValue.data(), NULL, NULL, 
+		reinterpret_cast<LPBYTE>(wcszValue), &cbSize) != ERROR_SUCCESS) {
+		return sDefault;
+	}
+
+	RegCloseKey(key);
+
+	return std::wstring(wcszValue);
+}
+
+std::string ToMBCS(std::wstring wstr) {
+	int size = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), wstr.size(), NULL, 0, NULL, NULL);
+	if(size == 0) {
+		return std::string();
+	}
+
+	std::string str;
+	str.resize(size);
+
+	WideCharToMultiByte(CP_UTF8, 0, wstr.data(), wstr.size(), &str[0], size, NULL, NULL);
+
+	return str;
+}
+
+std::wstring ToWBCS(std::string str) {
+	int size = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), NULL, 0);
+	if(size == 0) {
+		return std::wstring();
+	}
+
+	std::wstring wstr;
+	wstr.resize(size);
+
+	MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), &wstr[0], size);
+
+	return wstr;
+}
+
 /**
  * @brief 
  * @example 
@@ -77,12 +129,35 @@ int main(int argc, char** argv)
 		fputs("the arguments length is too short. it must be 2 or more.", stderr);
 		return -1;
 	}
+
+	// Reads the registry value. 
+	std::wstring sDefaultValue = L"";
+	std::wstring sRet = ReadRegString(HKEY_CURRENT_USER, L"Software\\KADOKAWA\\RPGMV", L"projectFileUrl", sDefaultValue);
 	
-	const char* projectFolder = argv[1];
+	std::wcout << sRet << std::endl;
+
+	// Extract directory name
+	size_t idx = sRet.find_last_of('/');
+	size_t startPos = 8;
+	std::wstring sProjectFolder = sRet.substr(startPos, idx - startPos);
+
+	size_t i = 0;
+	
+	while((i = sProjectFolder.find('/')) != std::wstring::npos) {
+		sProjectFolder.replace(i, 1, L"\\");
+	}
+
+	// Get command lines
+	std::string projectFolder = argv[1];
 	std::string nwjsFolder = argv[2];
+
+	// Checks whether project folder is included spaces.
+	if(sProjectFolder.compare(ToWBCS(projectFolder)) != 0) {
+		projectFolder = ToMBCS(sProjectFolder);
+	}
 		
 	// Change working directory.
-	if(CHDIR(projectFolder) == 0) 
+	if(CHDIR(projectFolder.data()) == 0) 
 	{
 		std::cout << "Success the move directory" << std::endl;
 	}
